@@ -44,7 +44,8 @@ namespace TwitchBot
                     .SetMinimumLevel(LogLevel.Information)
                     .AddConsole();
             });
-            services.AddTransient<IrcClient>();
+            services.AddSingleton<IrcClient>();
+            services.AddSingleton<IrcMessageParser>();
             services.AddTransient<ConsoleApplication>();
             return services;
         }

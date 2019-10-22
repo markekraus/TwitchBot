@@ -13,20 +13,22 @@ namespace TwitchBot
         private readonly ILogger _logger;
         private readonly IOptions<AppSettings> _config;
         private readonly IrcClient _client;
+        private readonly IrcMessageParser _parser;
 
-        public ConsoleApplication(ILogger<ConsoleApplication> logger, IOptions<AppSettings> config, IrcClient client)
+        public ConsoleApplication(
+            ILogger<ConsoleApplication> logger,
+            IOptions<AppSettings> config,
+            IrcClient client,
+            IrcMessageParser parser)
         {
             _logger = logger;
             _config = config;
             _client = client;
+            _parser = parser;
         }
         public async Task Run(){
             _logger.LogInformation($"Console Application Start {DateTime.UtcNow}");
-            string message;
-            do
-            {
-                message = await _client.ReadMessageAsync();
-            } while (!string.IsNullOrEmpty(message));
+            await _parser.Run();
             _logger.LogInformation($"Console Application End {DateTime.UtcNow}");
             Thread.Sleep(500);
         }

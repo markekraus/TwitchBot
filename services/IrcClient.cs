@@ -156,11 +156,16 @@ namespace TwitchBot.Services
 
         public async Task<string> ReadMessageAsync()
         {
+            var token = new CancellationTokenSource().Token;
+            return await ReadMessageAsync(token);
+        }
+        public async Task<string> ReadMessageAsync(CancellationToken token)
+        {
             return await Task.Run<string>(() => {
                 string line = string.Empty;
                 try
                 {
-                    line = outputQueue.Take();
+                    line = outputQueue.Take(token);
                     _logger.LogInformation($"message dequeued: {line}");
                 }
                 catch (Exception ex)
