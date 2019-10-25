@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace TwitchBot.Models
 {
@@ -30,17 +31,18 @@ namespace TwitchBot.Models
         private Uri _channelUri;
         public string DisplayName { get; set; }
         public string UserType { get; set; }
+        public string Color { get; set; }
 
         public int UserId { get; set; }
 
-        public bool IsMod {
-            get
-            {
-                return UserType == "mod";
-            }
-        }
+        public bool IsMod { get; set; } = false;
 
-        public bool IsOwner { get; set; }
+        public bool IsVip { get; set; } = false;
+        public bool IsSubGifter { get; set; } = false;
+
+        public bool IsBroadcaster { get; set; } = false;
+        public bool IsFounder { get; set; } = false;
+        public bool IsSubscriber { get; set; } = false;
 
         public IList<TwitchBadge> BadgeInfo;
         public IList<TwitchBadge> Badges;
@@ -51,11 +53,6 @@ namespace TwitchBot.Models
         {
             IrcMessage = Message;
             UserName = Message.Source.Split("!")[0];
-
-            if (Message.Target.StartsWith("#") && UserName == Message.Target.Substring(1))
-            {
-                    IsOwner = true;
-            }
 
             if(Message.HasTags)
             {
@@ -91,10 +88,29 @@ namespace TwitchBot.Models
                 if (Message.Tags.TryGetValue("badges", out badges) && ! string.IsNullOrWhiteSpace(badges))
                 {
                     Badges = TwitchBadge.Parse(badges);
+                    IsVip = Badges.Where(x => { return x.Name == "vip";}).Count() > 0;
+                    IsSubGifter = Badges.Where(x => { return x.Name == "sub-gifter";}).Count() > 0;
+                    IsMod = Badges.Where(x => { return x.Name == "mod";}).Count() > 0;
+                    IsFounder = Badges.Where(x => { return x.Name == "founder";}).Count() > 0;
+                    IsSubscriber = Badges.Where(x => { return x.Name == "subscriber";}).Count() > 0;
+                    IsBroadcaster = Badges.Where(x => { return x.Name == "broadcaster";}).Count() > 0;
+                }
+
+                if(!IsMod && IsBroadcaster) { IsMod = true; }
+
+                string color;
+                if (Message.Tags.TryGetValue("color", out color))
+                {
+                    Color = color;
                 }
             }
         }
 
         public TwitchUser() {}
+
+        public override string ToString()
+        {
+            return $"{UserName}";
+        }
     }
 }
