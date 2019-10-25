@@ -1,20 +1,45 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using TwitchBot.Interfaces;
 using TwitchBot.Models;
 
 namespace TwitchBot.Services
 {
-    public class IrcMessageParser
+    public class IrcMessageParser : ITwitchMessageSubject
     {
         private readonly ILogger _logger;
         private IrcClient _client;
+
+        private IList<ITwitchMessageObserver> _messageObservers = new List<ITwitchMessageObserver>();
 
         public IrcMessageParser(ILogger<IrcMessageParser> logger, IrcClient client)
         {
             _logger = logger;
             _client = client;
+        }
+
+        public void Attach(ITwitchMessageObserver TwitchMessageObserver)
+        {
+            _messageObservers.Add(TwitchMessageObserver);
+        }
+
+        public void Detach(ITwitchMessageObserver TwitchMessageObserver)
+        {
+            _messageObservers.Remove(TwitchMessageObserver);
+        }
+
+        private async Task NotifyMessageObservers(TwitchMessage Message)
+        {
+            await Task.Run(() => {
+
+                foreach (var observer in _messageObservers)
+                {
+                    observer.Update(Message);
+                }
+            });
         }
 
         public async Task Run()
@@ -23,6 +48,7 @@ namespace TwitchBot.Services
             string rawMessage;
             IrcMessage ircMessage;
             TwitchMessage twitchMessage;
+            Task notifyTask;
             var cts = new CancellationTokenSource();
             do
             {
@@ -47,6 +73,7 @@ namespace TwitchBot.Services
                     {
                         twitchMessage = new TwitchMessage(ircMessage);
                         _logger.LogInformation($"Parsed Twitch Message {twitchMessage}");
+                        notifyTask = NotifyMessageObservers(twitchMessage);
                     }
                     catch (System.Exception ex)
                     {

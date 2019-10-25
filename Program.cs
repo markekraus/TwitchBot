@@ -9,6 +9,8 @@ using System.IO;
 using TwitchBot.Options;
 using TwitchBot.Services;
 using System.Threading.Tasks;
+using TwitchBot.Interfaces;
+using TwitchBot.Commands;
 
 namespace TwitchBot
 {
@@ -46,6 +48,10 @@ namespace TwitchBot
             });
             services.AddSingleton<IrcClient>();
             services.AddSingleton<IrcMessageParser>();
+            services.AddSingleton<ITwitchMessageSubject>(x => x.GetRequiredService<IrcMessageParser>());
+            services.AddSingleton<TwitchCommandParser>();
+            services.AddSingleton<ITwitchCommandSubject>(x => x.GetRequiredService<TwitchCommandParser>());
+            services.AddSingleton<TestCommand>();
             services.AddTransient<ConsoleApplication>();
             return services;
         }

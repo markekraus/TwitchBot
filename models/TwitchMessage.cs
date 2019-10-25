@@ -28,21 +28,27 @@ namespace TwitchBot.Models
         public const string AllowedAction = "PRIVMSG";
         public TwitchMessage(string RawMessage) : base(RawMessage)
         { 
-            init();
+            init(this);
         }
 
-        public TwitchMessage(IrcMessage IrcMessage): base(IrcMessage.RawMessage)
+        public TwitchMessage(IrcMessage IrcMessage)
         {
-            init();
+            Action = IrcMessage.Action;
+            RawMessage = IrcMessage.RawMessage;
+            Source = IrcMessage.Source;
+            Tags = IrcMessage.Tags;
+            Message = IrcMessage.Message;
+            Target = IrcMessage.Target;
+            init(IrcMessage);
         }
 
-        private void init()
+        private void init(IrcMessage message)
         {
-            if (base.Action != AllowedAction)
+            if (Action != AllowedAction)
             {
-                throw new InvalidCastException($"Cannot convert to {nameof(TwitchMessage)}: {base.RawMessage}");
+                throw new InvalidCastException($"Cannot convert to {nameof(TwitchMessage)}: {RawMessage}");
             }
-            if (!base.HasTags)
+            if (!HasTags)
             {
                 throw new InvalidCastException($"Cannot convert to {nameof(TwitchMessage)}: No tags present");
             }
