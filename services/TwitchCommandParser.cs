@@ -61,7 +61,7 @@ namespace TwitchBot.Services
             {
                 foreach (var observer in _observers)
                 {
-                    if(string.Equals(command.Command, observer.GetCommand(), StringComparison.InvariantCultureIgnoreCase))
+                    if(observer.IsCommandSupported(command.Command))
                     {
                         observer.Update(command);
                     }

@@ -8,6 +8,7 @@ using TwitchBot.Models;
 using TwitchBot.Services;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 namespace TwitchBot.Commands
 {
@@ -19,7 +20,8 @@ namespace TwitchBot.Commands
         private HttpClient _httpClient;
         private Task runner;
 
-        public const string Command = "!catfact";
+        public const string PrimaryCommand = "!catfact";
+        private Regex CommandRex = new Regex("[!]{0,1}catfact[s]{0,1}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static Uri CatfactUri = new Uri("https://catfact.ninja/fact");
 
         private JsonSerializerOptions options = new JsonSerializerOptions
@@ -94,9 +96,14 @@ namespace TwitchBot.Commands
             });
         }
 
-        public string GetCommand()
+        public string GetPrimaryCommand()
         {
-            return Command;
+            return PrimaryCommand;
+        }
+
+        public bool IsCommandSupported(string Command)
+        {
+            return CommandRex.IsMatch(Command);
         }
     }
 }

@@ -15,7 +15,7 @@ namespace TwitchBot.Commands
         private IrcClient _client;
         private Task runner;
 
-        public const string Command = "!test";
+        public const string PrimaryCommand = "!test";
 
         private BlockingCollection<TwitchChatCommand> queue = new BlockingCollection<TwitchChatCommand>(new ConcurrentQueue<TwitchChatCommand>());
         public TestCommand(ILogger<TestCommand> logger, ITwitchCommandSubject subject, IrcClient client)
@@ -53,9 +53,14 @@ namespace TwitchBot.Commands
             });
         }
 
-        public string GetCommand()
+        public string GetPrimaryCommand()
         {
-            return Command;
+            return PrimaryCommand;
+        }
+
+        public bool IsCommandSupported(string Command)
+        {
+            return string.Equals(Command, PrimaryCommand, StringComparison.InvariantCultureIgnoreCase);
         }
     }
 }
