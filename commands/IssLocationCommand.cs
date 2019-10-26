@@ -21,7 +21,7 @@ namespace TwitchBot.Commands
         private Task runner;
 
         public const string PrimaryCommand = "!catfact";
-        private Regex CommandRex = new Regex("[!]{0,1}iss|[!]{0,1}issloc|[!]{0,1}isslocation|whereisiss|isswhere", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private Regex CommandRex = new Regex("[!]iss|[!]{0,1}issloc|[!]{0,1}isslocation|whereisiss|isswhere", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static Uri CatfactUri = new Uri("http://api.open-notify.org/iss-now.json");
 
         private JsonSerializerOptions options = new JsonSerializerOptions
