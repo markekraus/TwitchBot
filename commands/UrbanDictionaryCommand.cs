@@ -60,14 +60,15 @@ namespace TwitchBot.Commands
                 string result;
                 foreach (var command in queue.GetConsumingEnumerable())
                 {
+                    var usage = $"@{command.Message.TwitchUser.DisplayName} usage: '{PrimaryCommand} <word>' example: '{PrimaryCommand} face' or '{PrimaryCommand} \"double negative\"'";
                     if (!command.HasParameters || (command.HasParameters && command.Parameters.Count != 1))
                     {
-                        task = _ircClient.SendPublicChatMessageAsync($"@{command.Message.TwitchUser.DisplayName} usage: '{PrimaryCommand} <word>' example: '{PrimaryCommand} face'");
+                        task = _ircClient.SendPublicChatMessageAsync(usage);
                         continue;
                     }
                     result = string.Empty;
                     message = string.Empty;
-                    errorMessage = $"Sorry @{command.Message.TwitchUser.DisplayName}, I was unable to get an Urban Dictionary Definition.";
+                    errorMessage = $"Sorry @{command.Message.TwitchUser.DisplayName}, I was unable to get an Urban Dictionary Definition. {usage}";
                     _logger.LogInformation($"Processing {command.Command}...");
                     try
                     {
