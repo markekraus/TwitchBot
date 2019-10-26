@@ -32,6 +32,7 @@ namespace TwitchBot
             IssLocationCommand iisLocationCommand,
             ExchangeRateCommand exchangeRateCommand,
             UrbanDictionaryCommand urbanDictionaryCommand,
+            BrbCommand brbCommand,
             TestCommand testCommand)
 
         {
@@ -45,6 +46,7 @@ namespace TwitchBot
             commandObservers.Add(iisLocationCommand);
             commandObservers.Add(exchangeRateCommand);
             commandObservers.Add(catfactCommand);
+            commandObservers.Add(brbCommand);
             commandObservers.Add(urbanDictionaryCommand);
         }
         public async Task Run(){
