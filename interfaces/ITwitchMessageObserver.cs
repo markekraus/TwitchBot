@@ -6,5 +6,6 @@ namespace TwitchBot.Interfaces
     public interface ITwitchMessageObserver
     {
         Task Update(TwitchMessage Message);
+        string GetName();
     }
 }

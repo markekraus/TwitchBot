@@ -82,7 +82,7 @@ namespace TwitchBot.Models
             }
             else if (rawMessage.StartsWith(_ircPingIndicator))
             {
-                Source = rawMessage.Substring(rawMessage.IndexOf(_ircContextSeperator));
+                Source = rawMessage.Substring(rawMessage.IndexOf(_ircContextSeperator) + 1);
                 Action = _ircPingIndicator;
                 Target = Dns.GetHostName();
             }

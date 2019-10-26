@@ -51,10 +51,12 @@ namespace TwitchBot
             services.AddSingleton<IrcClient>();
             services.AddSingleton<IrcMessageParser>();
             services.AddSingleton<ITwitchMessageSubject>(x => x.GetRequiredService<IrcMessageParser>());
+            services.AddSingleton<IIrcMessageSubject>(x => x.GetRequiredService<IrcMessageParser>());
             services.AddSingleton<TwitchCommandParser>();
             services.AddSingleton<ITwitchCommandSubject>(x => x.GetRequiredService<TwitchCommandParser>());
             services.AddSingleton<TestCommand>();
             services.AddSingleton<CatfactsCommand>();
+            services.AddSingleton<PingHandler>();
             services.AddTransient<ConsoleApplication>();
             return services;
         }

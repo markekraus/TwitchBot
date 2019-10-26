@@ -17,7 +17,9 @@ namespace TwitchBot.Services
         private IList<ITwitchCommandObserver> _observers = new List<ITwitchCommandObserver>();
 
         private Task runner;
-        public TwitchCommandParser(ILogger<TwitchCommandParser> logger, ITwitchMessageSubject subject){
+        public TwitchCommandParser(
+            ILogger<TwitchCommandParser> logger,
+            ITwitchMessageSubject subject){
             _logger = logger;
             _subject = subject;
             subject.Attach(this);
@@ -40,9 +42,9 @@ namespace TwitchBot.Services
             await Task.Run(() => { queue.Add(Message); });
         }
 
-        async private Task Run()
+        private Task Run()
         {
-            await Task.Run(()=>{
+            return Task.Run(()=>{
                 TwitchChatCommand command;
                 Task task;
                 foreach (var message in queue.GetConsumingEnumerable())
@@ -67,6 +69,11 @@ namespace TwitchBot.Services
                     }
                 }
             });
+        }
+
+        public string GetName()
+        {
+            return nameof(TwitchCommandParser);
         }
     }
 }

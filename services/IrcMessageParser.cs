@@ -8,12 +8,13 @@ using TwitchBot.Models;
 
 namespace TwitchBot.Services
 {
-    public class IrcMessageParser : ITwitchMessageSubject
+    public class IrcMessageParser : ITwitchMessageSubject, IIrcMessageSubject
     {
         private readonly ILogger _logger;
         private IrcClient _client;
 
         private IList<ITwitchMessageObserver> _messageObservers = new List<ITwitchMessageObserver>();
+        private IList<IIrcMessageObserver> _ircObservers = new List<IIrcMessageObserver>();
 
         public IrcMessageParser(ILogger<IrcMessageParser> logger, IrcClient client)
         {
@@ -24,6 +25,7 @@ namespace TwitchBot.Services
         public void Attach(ITwitchMessageObserver TwitchMessageObserver)
         {
             _messageObservers.Add(TwitchMessageObserver);
+            _logger.LogInformation($"Registered {nameof(ITwitchMessageObserver)} {TwitchMessageObserver.GetName()}");
         }
 
         public void Detach(ITwitchMessageObserver TwitchMessageObserver)
@@ -38,6 +40,18 @@ namespace TwitchBot.Services
                 foreach (var observer in _messageObservers)
                 {
                     observer.Update(Message);
+                    _logger.LogInformation($"Message observer updated {observer.GetName()}");
+                }
+            });
+        }
+        private async Task NotifyIrcObservers(IrcMessage Message)
+        {
+            await Task.Run(() => {
+
+                foreach (var observer in _ircObservers)
+                {
+                    observer.Update(Message);
+                    _logger.LogInformation($"IRC observer updated {observer.GetName()}");
                 }
             });
         }
@@ -67,6 +81,7 @@ namespace TwitchBot.Services
                     _logger.LogError(ex, "Unable to parse IRC message", rawMessage);
                     continue;
                 }
+                notifyTask = NotifyIrcObservers(ircMessage);
                 if (ircMessage.Action == TwitchMessage.AllowedAction)
                 {
                     try
@@ -81,6 +96,17 @@ namespace TwitchBot.Services
                     }
                 }
             } while (!string.IsNullOrEmpty(rawMessage));
+        }
+
+        public void Attach(IIrcMessageObserver IrcMessageObserver)
+        {
+            _ircObservers.Add(IrcMessageObserver);
+            _logger.LogInformation($"Registered {nameof(IIrcMessageObserver)} {IrcMessageObserver.GetName()}");
+        }
+
+        public void Detach(IIrcMessageObserver IrcMessageObserver)
+        {
+            _ircObservers.Remove(IrcMessageObserver);
         }
     }
 }

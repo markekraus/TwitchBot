@@ -18,6 +18,7 @@ namespace TwitchBot
         private readonly IrcClient _client;
         private readonly IrcMessageParser _ircParser;
         private readonly TwitchCommandParser _commandParser;
+        private readonly PingHandler _pingHandler;
         private List<ITwitchCommandObserver> commandObservers = new List<ITwitchCommandObserver>();
 
         public ConsoleApplication(
@@ -26,6 +27,7 @@ namespace TwitchBot
             IrcClient client,
             IrcMessageParser ircParser,
             TwitchCommandParser commandParser,
+            PingHandler pingHandler,
             CatfactsCommand catfactCommand,
             TestCommand testCommand)
 
@@ -35,6 +37,7 @@ namespace TwitchBot
             _client = client;
             _ircParser = ircParser;
             _commandParser = commandParser;
+            _pingHandler = pingHandler;
             commandObservers.Add(testCommand);
             commandObservers.Add(catfactCommand);
         }
