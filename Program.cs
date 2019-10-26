@@ -57,6 +57,7 @@ namespace TwitchBot
             services.AddSingleton<TestCommand>();
             services.AddSingleton<CatfactsCommand>();
             services.AddSingleton<IssLocationCommand>();
+            services.AddSingleton<ExchangeRateCommand>();
             services.AddSingleton<PingHandler>();
             services.AddTransient<ConsoleApplication>();
             return services;

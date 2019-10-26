@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -12,17 +12,17 @@ using System.Text.RegularExpressions;
 
 namespace TwitchBot.Commands
 {
-    public class IssLocationCommand : ITwitchCommandObserver
+    public class ExchangeRateCommand : ITwitchCommandObserver
     {
-        private ILogger<IssLocationCommand> _logger;
+        private ILogger<ExchangeRateCommand> _logger;
         private ITwitchCommandSubject _subject;
         private IrcClient _ircClient;
         private HttpClient _httpClient;
         private Task runner;
 
-        public const string PrimaryCommand = "!iislocation";
-        private Regex CommandRex = new Regex("[!]iss|[!]{0,1}issloc|[!]{0,1}isslocation|whereisiss|isswhere", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        private static Uri CatfactUri = new Uri("http://api.open-notify.org/iss-now.json");
+        public const string PrimaryCommand = "!exchangerate";
+        private Regex CommandRex = new Regex("!exchangerate|!exchange", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static string ApiUri = "https://api.exchangeratesapi.io/latest?base={0}&symbols={0},{1}";
 
         private JsonSerializerOptions options = new JsonSerializerOptions
         {
@@ -30,8 +30,8 @@ namespace TwitchBot.Commands
         };
 
         private BlockingCollection<TwitchChatCommand> queue = new BlockingCollection<TwitchChatCommand>(new ConcurrentQueue<TwitchChatCommand>());
-        public IssLocationCommand(
-            ILogger<IssLocationCommand> logger, 
+        public ExchangeRateCommand(
+            ILogger<ExchangeRateCommand> logger, 
             ITwitchCommandSubject subject, 
             IrcClient ircClient,
             HttpClient httpClient)
@@ -58,15 +58,21 @@ namespace TwitchBot.Commands
                 string message;
                 string errorMessage;
                 string result;
+                double amount;
                 foreach (var command in queue.GetConsumingEnumerable())
                 {
+                    if (!command.HasParameters || (command.HasParameters && command.Parameters.Count != 2))
+                    {
+                        task = _ircClient.SendPublicChatMessageAsync($"@{command.Message.TwitchUser.DisplayName} usage: '{PrimaryCommand} <source currency code> <destination currency code>' example: '{PrimaryCommand} USD INR'");
+                        continue;
+                    }
                     result = string.Empty;
                     message = string.Empty;
-                    errorMessage = $"Sorry @{command.Message.TwitchUser.DisplayName}, I was unable to get the ISS location.";
+                    errorMessage = $"Sorry @{command.Message.TwitchUser.DisplayName}, I was unable to get an exchange rate.";
                     _logger.LogInformation($"Processing {command.Command}...");
                     try
                     {
-                        result = _httpClient.GetStringAsync(CatfactUri).GetAwaiter().GetResult();
+                        result = _httpClient.GetStringAsync(string.Format(ApiUri, command.Parameters[0].ToUpper(), command.Parameters[1].ToUpper())).GetAwaiter().GetResult();
                         _logger.LogInformation($"Received HTTP message: '{result}'");
                     }
                     catch (System.Exception ex)
@@ -75,9 +81,11 @@ namespace TwitchBot.Commands
                     }
                     try
                     {
-                        var loc = JsonSerializer.Deserialize<IisLocation>(result, options);
-                        message = $"The international Space Station is currently at Longitude: {loc.IisPosition.Longitude}, Latitude: {loc.IisPosition.Latitude}.";
-                        _logger.LogInformation($"Parsed Fact: '{message}'");
+                        var exchange = JsonSerializer.Deserialize<ExchangeResponse>(result, options);
+                        if(exchange.Rates.TryGetValue(command.Parameters[1], out amount)){
+                            message = $"1 {command.Parameters[0]} is {amount} {command.Parameters[1]}";
+                            _logger.LogInformation($"Parsed Fact: '{message}'");
+                        }
                     }
                     catch (System.Exception ex)
                     {
