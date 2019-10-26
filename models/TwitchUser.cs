@@ -44,6 +44,19 @@ namespace TwitchBot.Models
         public bool IsFounder { get; set; } = false;
         public bool IsSubscriber { get; set; } = false;
 
+        public string IrcUserName
+        { 
+            get
+            {
+                if(String.IsNullOrWhiteSpace(_ircUserName))
+                {
+                    _ircUserName =  $":{UserName}!{UserName}@{UserName}.tmi.twitch.tv"; 
+                }
+                return _ircUserName;
+            }
+        }
+        private string _ircUserName;
+
         public IList<TwitchBadge> BadgeInfo;
         public IList<TwitchBadge> Badges;
 

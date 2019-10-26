@@ -16,7 +16,7 @@ namespace TwitchBot.Commands
     {
         private ILogger<UrbanDictionaryCommand> _logger;
         private ITwitchCommandSubject _subject;
-        private IrcClient _ircClient;
+        private ITwitchIrcClientAdapter _ircClient;
         private HttpClient _httpClient;
         private Task runner;
 
@@ -33,7 +33,7 @@ namespace TwitchBot.Commands
         public UrbanDictionaryCommand(
             ILogger<UrbanDictionaryCommand> logger, 
             ITwitchCommandSubject subject, 
-            IrcClient ircClient,
+            ITwitchIrcClientAdapter ircClient,
             HttpClient httpClient)
         {
             _logger = logger;
@@ -63,7 +63,9 @@ namespace TwitchBot.Commands
                     var usage = $"@{command.Message.TwitchUser.DisplayName} usage: '{PrimaryCommand} <word>' example: '{PrimaryCommand} face' or '{PrimaryCommand} \"double negative\"'";
                     if (!command.HasParameters || (command.HasParameters && command.Parameters.Count != 1))
                     {
-                        task = _ircClient.SendPublicChatMessageAsync(usage);
+                        task = _ircClient.SendPublicChatMessageAsync(
+                            Message: usage, 
+                            Channel: command.Message.IrcChannel);
                         continue;
                     }
                     result = string.Empty;
@@ -100,7 +102,7 @@ namespace TwitchBot.Commands
                     {
                         message = $"@{command.Message.TwitchUser.DisplayName} {message}";
                     }
-                    task = _ircClient.SendPublicChatMessageAsync(message);
+                    task = _ircClient.SendPublicChatMessageAsync(Message: message, Channel: command.Message.IrcChannel);
                 }
             });
         }

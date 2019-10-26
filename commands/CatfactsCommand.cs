@@ -16,7 +16,7 @@ namespace TwitchBot.Commands
     {
         private ILogger<CatfactsCommand> _logger;
         private ITwitchCommandSubject _subject;
-        private IrcClient _ircClient;
+        private ITwitchIrcClientAdapter _ircClient;
         private HttpClient _httpClient;
         private Task runner;
 
@@ -33,7 +33,7 @@ namespace TwitchBot.Commands
         public CatfactsCommand(
             ILogger<CatfactsCommand> logger, 
             ITwitchCommandSubject subject, 
-            IrcClient ircClient,
+            ITwitchIrcClientAdapter ircClient,
             HttpClient httpClient)
         {
             _logger = logger;
@@ -91,7 +91,7 @@ namespace TwitchBot.Commands
                     {
                         message = $"@{command.Message.TwitchUser.DisplayName} : {message}";
                     }
-                    task = _ircClient.SendPublicChatMessageAsync(message);
+                    task = _ircClient.SendPublicChatMessageAsync(Message: message, Channel: command.Message.IrcChannel);
                 }
             });
         }

@@ -9,51 +9,55 @@ using Microsoft.Extensions.Logging;
 using System.Net.Security;
 using System.Threading;
 using System.Collections.Concurrent;
+using TwitchBot.Interfaces;
 
 namespace TwitchBot.Services
 {
+
     // Reference: https://www.youtube.com/watch?v=Ss-OzV9aUZg
-    public class IrcClient
+    public class IrcClient : IIrcClient
     {
         private readonly IrcSettings _config;
         private readonly ILogger _logger;
 
-        private TcpClient tcpClient;
-        private SslStream sslStream;
-        private StreamReader inputStream;
-        private StreamWriter outputStream;
+        private TcpClient _tcpClient;
+        private SslStream _sslStream;
+        private StreamReader _inputStream;
+        private StreamWriter _outputStream;
 
-        private BlockingCollection<string> inputQueue;
-        private BlockingCollection<string> outputQueue;
+        private BlockingCollection<string> inputQueue = new BlockingCollection<string>(new ConcurrentQueue<string>());
+        private BlockingCollection<string> outputQueue = new BlockingCollection<string>(new ConcurrentQueue<string>());
 
-        private Task inputTask;
-        private Task outputTask;
+        private Task _inputTask;
+        private Task _outputTask;
 
-        private const string hostName = "irc.chat.twitch.tv";
-        private const int port = 6697;
+        private int _retryCount = 0;
 
-        private int retryCount = 0;
-        private int maxRetries = 20;
-
-        public IrcClient(IOptions<IrcSettings> config, ILogger<IrcClient> logger)
+        public IrcClient(
+            IOptions<IrcSettings> config,
+            ILogger<IrcClient> logger)
         {
             _config = config.Value;
             _logger = logger;
 
-            inputQueue = new BlockingCollection<string>(new ConcurrentQueue<string>());
-            outputQueue = new BlockingCollection<string>(new ConcurrentQueue<string>());
-
-            
             Connect();
 
-            inputTask = Task.Run(() => {
+            _inputTask = StartInputHandler();
+
+            _outputTask = StartOutputHandler();
+        }
+
+        private Task StartInputHandler()
+        {
+            return Task.Run(() =>
+            {
                 foreach (var message in inputQueue.GetConsumingEnumerable())
                 {
                     try
                     {
                         _logger.LogInformation($"irc send: {message}");
-                        outputStream.WriteLine(message);
-                        outputStream.Flush();
+                        _outputStream.WriteLine(message);
+                        _outputStream.Flush();
                     }
                     catch (Exception ex)
                     {
@@ -61,14 +65,18 @@ namespace TwitchBot.Services
                     }
                 }
             });
+        }
 
-            outputTask = Task.Run(() => {
+        private Task StartOutputHandler()
+        {
+            return Task.Run(() =>
+            {
                 while (true)
                 {
                     try
                     {
-                        var line = inputStream.ReadLine();
-                        retryCount = 0;
+                        var line = _inputStream.ReadLine();
+                        _retryCount = 0;
                         if (!string.IsNullOrWhiteSpace(line))
                         {
                             _logger.LogInformation($"irc receive: {line}");
@@ -82,45 +90,35 @@ namespace TwitchBot.Services
                     }
                 }
             });
-
         }
 
         private void Connect()
         {
-            _logger.LogInformation("Connecting to irc", hostName, port);
-            tcpClient = new TcpClient(hostName, port);
-            sslStream = new SslStream(tcpClient.GetStream());
+            _logger.LogInformation("Connecting to irc", _config.HostName, _config.Port);
+            _tcpClient = new TcpClient(_config.HostName, _config.Port);
+            _sslStream = new SslStream(_tcpClient.GetStream());
             _logger.LogInformation("SSL Client Authentication");
-            sslStream.AuthenticateAsClient(hostName);
+            _sslStream.AuthenticateAsClient(_config.HostName);
             _logger.LogInformation("Create input and output stream.");
-            inputStream = new StreamReader(sslStream);
-            outputStream = new StreamWriter(sslStream);
+            _inputStream = new StreamReader(_sslStream);
+            _outputStream = new StreamWriter(_sslStream);
 
-             // Reference: https://dev.twitch.tv/docs/irc/tags/
-            outputStream.WriteLine("CAP REQ :twitch.tv/tags");
-            outputStream.Flush();
-            // Reference: https://dev.twitch.tv/docs/irc/commands/
-            outputStream.WriteLine("CAP REQ :twitch.tv/commands");
-            outputStream.Flush();
-            // Reference: https://dev.twitch.tv/docs/irc/membership/
-            outputStream.WriteLine("CAP REQ :twitch.tv/membership");
-            outputStream.Flush();
-            outputStream.WriteLine("PASS " + _config.Password);
-            outputStream.Flush();
-            outputStream.WriteLine("NICK " + _config.UserName);
-            outputStream.Flush();
-            outputStream.WriteLine("USER " + _config.UserName + " 8 * :" + _config.UserName);
-            outputStream.Flush();
-            outputStream.WriteLine("JOIN #" + _config.Channel);
-            outputStream.Flush();
+            _outputStream.WriteLine("PASS " + _config.Password);
+            _outputStream.Flush();
+            _outputStream.WriteLine("NICK " + _config.UserName);
+            _outputStream.Flush();
+            _outputStream.WriteLine("USER " + _config.UserName + " 8 * :" + _config.UserName);
+            _outputStream.Flush();
+            _outputStream.WriteLine("JOIN #" + _config.DefaultChannel);
+            _outputStream.Flush();
         }
 
         private void Reconnect()
         {
-            if (retryCount < maxRetries)
+            if (_retryCount < _config.MaxRetryAttempts)
             {
-                retryCount++;
-                _logger.LogInformation($"Attempting to reconnect. Attempt {retryCount} of {maxRetries}.");
+                _retryCount++;
+                _logger.LogInformation($"Attempting to reconnect. Attempt {_retryCount} of {_config.MaxRetryAttempts}.");
                 Connect();
             }
             else
@@ -129,61 +127,38 @@ namespace TwitchBot.Services
             }
         }
 
-        public async Task SendIrcMessageAsync(string message)
+        public async Task SendIrcMessageAsync(string Message)
         {
-            await Task.Run ( () =>
-                {
-                    try
-                    {
-                        _logger.LogInformation($"Queing message: {message}");
-                        inputQueue.TryAdd(message);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "IrcClient", "SendIrcMessage(string)", false);
-                    }
-                }
+            await Task.Run(() =>
+              {
+                  try
+                  {
+                      _logger.LogInformation($"Queing message: {Message}");
+                      inputQueue.TryAdd(Message);
+                  }
+                  catch (Exception ex)
+                  {
+                      _logger.LogError(ex, "IrcClient", "SendIrcMessage(string)", false);
+                  }
+              }
             );
         }
 
-        public async Task SendPublicChatMessageAsync(string message)
+        public async Task SendPublicChatMessageAsync(string User, string Message, string Channel)
         {
-            var msg = ":" + _config.UserName + "!" + _config.UserName + "@" + _config.UserName +
-                    ".tmi.twitch.tv PRIVMSG #" + _config.Channel + " :" + message;
+            if (Channel.StartsWith("#"))
+            {
+                Channel = Channel.Substring(1);
+            }
+
+            var msg = $"{User} PRIVMSG #{Channel} :{Message}";
             try
             {
                 await SendIrcMessageAsync(msg);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to sent chat message.", message, msg);
-            }
-        }
-
-        // public async void ClearMessage(TwitchChatter chatter)
-        // {
-        //     try
-        //     {
-        //         SendIrcMessage(":" + _config.UserName + "!" + _config.UserName + "@" + _config.UserName +
-        //             ".tmi.twitch.tv PRIVMSG #" + _config.Channel + " :/delete " + chatter.MessageId);
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         await _errHndlrInstance.LogError(ex, "IrcClient", "ClearMessage(TwitchChatter)", false);
-        //     }
-        // }
-
-        public async Task SendChatTimeoutAsync(string offender, int timeout = 1)
-        {
-            var msg = ":" + _config.UserName + "!" + _config.UserName + "@" + _config.UserName +
-                    ".tmi.twitch.tv PRIVMSG #" + _config.Channel + " :/timeout " + offender + " " + timeout;
-            try
-            {
-                await SendIrcMessageAsync(msg);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "failed to send time out", offender, timeout, msg);
+                _logger.LogError(ex, "Failed to sent chat message.", Message, msg);
             }
         }
 
@@ -192,13 +167,14 @@ namespace TwitchBot.Services
             var token = new CancellationTokenSource().Token;
             return await ReadMessageAsync(token);
         }
-        public async Task<string> ReadMessageAsync(CancellationToken token)
+        public async Task<string> ReadMessageAsync(CancellationToken Token)
         {
-            return await Task.Run<string>(() => {
+            return await Task.Run<string>(() =>
+            {
                 string line = string.Empty;
                 try
                 {
-                    line = outputQueue.Take(token);
+                    line = outputQueue.Take(Token);
                     _logger.LogInformation($"message dequeued: {line}");
                 }
                 catch (Exception ex)

@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using TwitchBot.Interfaces;
 using TwitchBot.Commands;
 using System.Net.Http;
+using TwitchBot.Models;
 
 namespace TwitchBot
 {
@@ -36,12 +37,18 @@ namespace TwitchBot
             var services = new ServiceCollection();
             services.AddOptions();
             services.Configure<AppSettings>(configuration);
-            services.Configure<IrcSettings>( _option => {
-                _option.Channel = configuration.GetValue<string>("StreamerChannel").ToLower();
+            services.Configure<IrcSettings>( _option =>
+            {
+                _option.DefaultChannel = configuration.GetValue<string>("BotOwner").ToLower();
                 _option.UserName = configuration.GetValue<string>("BotUserName").ToLower();
                 _option.Password = configuration.GetValue<string>("BotPassword",string.Empty).ToLower();
+                _option.Port = 6697;
+                _option.HostName = "irc.chat.twitch.tv";
+                _option.EnableTls = true;
+
             });
-            services.AddLogging(logging => {
+            services.AddLogging(logging => 
+            {
                 logging
                     .ClearProviders()
                     .SetMinimumLevel(LogLevel.Information)
@@ -49,6 +56,13 @@ namespace TwitchBot
             });
             services.AddSingleton<HttpClient>();
             services.AddSingleton<IrcClient>();
+            services.AddSingleton<IIrcClient>(x => x.GetRequiredService<IrcClient>());
+            services.Configure<TwitchUser>( user => 
+            {
+                user.UserName = configuration.GetValue<string>("BotUserName").ToLower();
+            });
+            services.AddSingleton<TwitchIrcClientAdapter>();
+            services.AddSingleton<ITwitchIrcClientAdapter>(x => x.GetRequiredService<TwitchIrcClientAdapter>());
             services.AddSingleton<IrcMessageParser>();
             services.AddSingleton<ITwitchMessageSubject>(x => x.GetRequiredService<IrcMessageParser>());
             services.AddSingleton<IIrcMessageSubject>(x => x.GetRequiredService<IrcMessageParser>());
