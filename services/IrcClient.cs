@@ -32,6 +32,9 @@ namespace TwitchBot.Services
         private const string hostName = "irc.chat.twitch.tv";
         private const int port = 6697;
 
+        private int retryCount = 0;
+        private int maxRetries = 20;
+
         public IrcClient(IOptions<IrcSettings> config, ILogger<IrcClient> logger)
         {
             _config = config.Value;
@@ -40,14 +43,8 @@ namespace TwitchBot.Services
             inputQueue = new BlockingCollection<string>(new ConcurrentQueue<string>());
             outputQueue = new BlockingCollection<string>(new ConcurrentQueue<string>());
 
-            _logger.LogInformation("Connecting to irc", hostName, port);
-            tcpClient = new TcpClient(hostName, port);
-            sslStream = new SslStream(tcpClient.GetStream());
-            _logger.LogInformation("SSL Client Authentication");
-            sslStream.AuthenticateAsClient(hostName);
-            _logger.LogInformation("Create input and output stream.");
-            inputStream = new StreamReader(sslStream);
-            outputStream = new StreamWriter(sslStream);
+            
+            Connect();
 
             inputTask = Task.Run(() => {
                 foreach (var message in inputQueue.GetConsumingEnumerable())
@@ -71,6 +68,7 @@ namespace TwitchBot.Services
                     try
                     {
                         var line = inputStream.ReadLine();
+                        retryCount = 0;
                         if (!string.IsNullOrWhiteSpace(line))
                         {
                             _logger.LogInformation($"irc receive: {line}");
@@ -80,20 +78,55 @@ namespace TwitchBot.Services
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "Error reading message");
+                        Reconnect();
                     }
                 }
             });
 
-            // Reference: https://dev.twitch.tv/docs/irc/tags/
-            SendIrcMessageAsync("CAP REQ :twitch.tv/tags").GetAwaiter().GetResult();
+        }
+
+        private void Connect()
+        {
+            _logger.LogInformation("Connecting to irc", hostName, port);
+            tcpClient = new TcpClient(hostName, port);
+            sslStream = new SslStream(tcpClient.GetStream());
+            _logger.LogInformation("SSL Client Authentication");
+            sslStream.AuthenticateAsClient(hostName);
+            _logger.LogInformation("Create input and output stream.");
+            inputStream = new StreamReader(sslStream);
+            outputStream = new StreamWriter(sslStream);
+
+             // Reference: https://dev.twitch.tv/docs/irc/tags/
+            outputStream.WriteLine("CAP REQ :twitch.tv/tags");
+            outputStream.Flush();
             // Reference: https://dev.twitch.tv/docs/irc/commands/
-            SendIrcMessageAsync("CAP REQ :twitch.tv/commands").GetAwaiter().GetResult();
+            outputStream.WriteLine("CAP REQ :twitch.tv/commands");
+            outputStream.Flush();
             // Reference: https://dev.twitch.tv/docs/irc/membership/
-            SendIrcMessageAsync("CAP REQ :twitch.tv/membership").GetAwaiter().GetResult();
-            SendIrcMessageAsync("PASS " + _config.Password).GetAwaiter().GetResult();
-            SendIrcMessageAsync("NICK " + _config.UserName).GetAwaiter().GetResult();
-            SendIrcMessageAsync("USER " + _config.UserName + " 8 * :" + _config.UserName).GetAwaiter().GetResult();
-            SendIrcMessageAsync("JOIN #" + _config.Channel).GetAwaiter().GetResult();
+            outputStream.WriteLine("CAP REQ :twitch.tv/membership");
+            outputStream.Flush();
+            outputStream.WriteLine("PASS " + _config.Password);
+            outputStream.Flush();
+            outputStream.WriteLine("NICK " + _config.UserName);
+            outputStream.Flush();
+            outputStream.WriteLine("USER " + _config.UserName + " 8 * :" + _config.UserName);
+            outputStream.Flush();
+            outputStream.WriteLine("JOIN #" + _config.Channel);
+            outputStream.Flush();
+        }
+
+        private void Reconnect()
+        {
+            if (retryCount < maxRetries)
+            {
+                retryCount++;
+                _logger.LogInformation($"Attempting to reconnect. Attempt {retryCount} of {maxRetries}.");
+                Connect();
+            }
+            else
+            {
+                Environment.Exit(1);
+            }
         }
 
         public async Task SendIrcMessageAsync(string message)
