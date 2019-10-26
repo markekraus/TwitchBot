@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -12,17 +12,17 @@ using System.Text.RegularExpressions;
 
 namespace TwitchBot.Commands
 {
-    public class CatfactsCommand : ITwitchCommandObserver
+    public class IssLocationCommand : ITwitchCommandObserver
     {
-        private ILogger<CatfactsCommand> _logger;
+        private ILogger<IssLocationCommand> _logger;
         private ITwitchCommandSubject _subject;
         private IrcClient _ircClient;
         private HttpClient _httpClient;
         private Task runner;
 
         public const string PrimaryCommand = "!catfact";
-        private Regex CommandRex = new Regex("[!]{0,1}catfact[s]{0,1}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        private static Uri CatfactUri = new Uri("https://catfact.ninja/fact");
+        private Regex CommandRex = new Regex("[!]{0,1}iss|[!]{0,1}issloc|[!]{0,1}isslocation|whereisiss|isswhere", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static Uri CatfactUri = new Uri("http://api.open-notify.org/iss-now.json");
 
         private JsonSerializerOptions options = new JsonSerializerOptions
         {
@@ -30,8 +30,8 @@ namespace TwitchBot.Commands
         };
 
         private BlockingCollection<TwitchChatCommand> queue = new BlockingCollection<TwitchChatCommand>(new ConcurrentQueue<TwitchChatCommand>());
-        public CatfactsCommand(
-            ILogger<CatfactsCommand> logger, 
+        public IssLocationCommand(
+            ILogger<IssLocationCommand> logger, 
             ITwitchCommandSubject subject, 
             IrcClient ircClient,
             HttpClient httpClient)
@@ -75,7 +75,8 @@ namespace TwitchBot.Commands
                     }
                     try
                     {
-                        message = JsonSerializer.Deserialize<CatFact>(result, options).Fact;
+                        var loc = JsonSerializer.Deserialize<IisLocation>(result, options);
+                        message = $"The international Space Station is currently at Longitude: {loc.IisPosition.Longitude}, Latitude: {loc.IisPosition.Latitude}.";
                         _logger.LogInformation($"Parsed Fact: '{message}'");
                     }
                     catch (System.Exception ex)
@@ -89,7 +90,7 @@ namespace TwitchBot.Commands
                     }
                     else
                     {
-                        message = $"@{command.Message.TwitchUser.DisplayName} : {message}";
+                        message = $"@{command.Message.TwitchUser.DisplayName} {message}";
                     }
                     task = _ircClient.SendPublicChatMessageAsync(message);
                 }

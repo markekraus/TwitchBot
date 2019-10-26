@@ -29,6 +29,7 @@ namespace TwitchBot
             TwitchCommandParser commandParser,
             PingHandler pingHandler,
             CatfactsCommand catfactCommand,
+            IssLocationCommand iisLocationCommand,
             TestCommand testCommand)
 
         {
@@ -39,6 +40,7 @@ namespace TwitchBot
             _commandParser = commandParser;
             _pingHandler = pingHandler;
             commandObservers.Add(testCommand);
+            commandObservers.Add(iisLocationCommand);
             commandObservers.Add(catfactCommand);
         }
         public async Task Run(){
