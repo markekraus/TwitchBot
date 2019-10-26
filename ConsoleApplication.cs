@@ -26,7 +26,8 @@ namespace TwitchBot
             IrcClient client,
             IrcMessageParser ircParser,
             TwitchCommandParser commandParser,
-            TestCommand testcommand)
+            CatfactsCommand catfactCommand,
+            TestCommand testCommand)
 
         {
             _logger = logger;
@@ -34,7 +35,8 @@ namespace TwitchBot
             _client = client;
             _ircParser = ircParser;
             _commandParser = commandParser;
-            commandObservers.Add(testcommand);
+            commandObservers.Add(testCommand);
+            commandObservers.Add(catfactCommand);
         }
         public async Task Run(){
             _logger.LogInformation($"Console Application Start {DateTime.UtcNow}");

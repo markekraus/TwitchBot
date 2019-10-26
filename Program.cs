@@ -11,6 +11,7 @@ using TwitchBot.Services;
 using System.Threading.Tasks;
 using TwitchBot.Interfaces;
 using TwitchBot.Commands;
+using System.Net.Http;
 
 namespace TwitchBot
 {
@@ -46,12 +47,14 @@ namespace TwitchBot
                     .SetMinimumLevel(LogLevel.Information)
                     .AddConsole();
             });
+            services.AddSingleton<HttpClient>();
             services.AddSingleton<IrcClient>();
             services.AddSingleton<IrcMessageParser>();
             services.AddSingleton<ITwitchMessageSubject>(x => x.GetRequiredService<IrcMessageParser>());
             services.AddSingleton<TwitchCommandParser>();
             services.AddSingleton<ITwitchCommandSubject>(x => x.GetRequiredService<TwitchCommandParser>());
             services.AddSingleton<TestCommand>();
+            services.AddSingleton<CatfactsCommand>();
             services.AddTransient<ConsoleApplication>();
             return services;
         }
