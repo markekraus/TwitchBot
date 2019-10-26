@@ -20,7 +20,7 @@ namespace TwitchBot.Commands
         private HttpClient _httpClient;
         private Task runner;
 
-        public const string PrimaryCommand = "!catfact";
+        public const string PrimaryCommand = "!iislocation";
         private Regex CommandRex = new Regex("[!]iss|[!]{0,1}issloc|[!]{0,1}isslocation|whereisiss|isswhere", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static Uri CatfactUri = new Uri("http://api.open-notify.org/iss-now.json");
 
