@@ -45,6 +45,9 @@ namespace TwitchBot.Commands
                     if (command.HasParameters && command.Parameters[0] == "123")
                     {
                         message = $"Valid !test Received from @{command.Message.TwitchUser.DisplayName}";
+                    } else if (command.HasParameters && (command.Parameters[0] == "69" || command.Parameters[0] =="420"))
+                    {
+                        message = $"Are you happy now, @flamingketchup1, you filthy D-gen.";
                     }
                     else
                     {

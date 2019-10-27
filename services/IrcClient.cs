@@ -63,6 +63,7 @@ namespace TwitchBot.Services
                     {
                         _logger.LogError(ex, "IrcClient", "SendIrcMessage(string)", false);
                     }
+                    Thread.Sleep(1000);
                 }
             });
         }
