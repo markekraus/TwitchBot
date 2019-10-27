@@ -33,6 +33,7 @@ namespace TwitchBot
             ExchangeRateCommand exchangeRateCommand,
             UrbanDictionaryCommand urbanDictionaryCommand,
             BrbCommand brbCommand,
+            HiMarkCommand hiMarkCommand,
             TestCommand testCommand)
 
         {
@@ -48,6 +49,7 @@ namespace TwitchBot
             commandObservers.Add(catfactCommand);
             commandObservers.Add(brbCommand);
             commandObservers.Add(urbanDictionaryCommand);
+            commandObservers.Add(hiMarkCommand);
         }
         public async Task Run(){
             _logger.LogInformation($"Console Application Start {DateTime.UtcNow}");

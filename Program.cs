@@ -13,6 +13,7 @@ using TwitchBot.Interfaces;
 using TwitchBot.Commands;
 using System.Net.Http;
 using TwitchBot.Models;
+using System.Collections.Generic;
 
 namespace TwitchBot
 {
@@ -57,9 +58,13 @@ namespace TwitchBot
             services.AddSingleton<HttpClient>();
             services.AddSingleton<IrcClient>();
             services.AddSingleton<IIrcClient>(x => x.GetRequiredService<IrcClient>());
-            services.Configure<TwitchUser>( user => 
+            services.Configure<TwitchIrcClientAdapterSettings>( _options => 
             {
-                user.UserName = configuration.GetValue<string>("BotUserName").ToLower();
+               _options.BotUser = new TwitchUser()
+                {
+                    UserName = configuration.GetValue<string>("BotUserName").ToLower()
+                };
+                _options.Channels = configuration.GetSection("Channels").Get<List<string>>();
             });
             services.AddSingleton<TwitchIrcClientAdapter>();
             services.AddSingleton<ITwitchIrcClientAdapter>(x => x.GetRequiredService<TwitchIrcClientAdapter>());
@@ -74,6 +79,7 @@ namespace TwitchBot
             services.AddSingleton<ExchangeRateCommand>();
             services.AddSingleton<UrbanDictionaryCommand>();
             services.AddSingleton<BrbCommand>();
+            services.AddSingleton<HiMarkCommand>();
             services.AddSingleton<PingHandler>();
             services.AddTransient<ConsoleApplication>();
             return services;

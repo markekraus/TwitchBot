@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using TwitchBot.Models;
 using System.Threading.Tasks;
 using System;
+using TwitchBot.Options;
 
 namespace TwitchBot.Services
 {
@@ -12,16 +13,16 @@ namespace TwitchBot.Services
     {
         private IIrcClient _client;
         private ILogger<TwitchIrcClientAdapter> _logger;
-        private TwitchUser _botUser;
+        private TwitchIrcClientAdapterSettings _config;
 
         public TwitchIrcClientAdapter(
             IIrcClient Client,
             ILogger<TwitchIrcClientAdapter> Logger,
-            IOptions<TwitchUser> BotUser)
+            IOptions<TwitchIrcClientAdapterSettings> Config)
         {
             _client = Client;
             _logger = Logger;
-            _botUser = BotUser.Value;
+            _config = Config.Value;
 
             var init = Init();
         }
@@ -34,11 +35,15 @@ namespace TwitchBot.Services
             await _client.SendIrcMessageAsync("CAP REQ :twitch.tv/tags");
             await _client.SendIrcMessageAsync("CAP REQ :twitch.tv/commands");
             await _client.SendIrcMessageAsync("CAP REQ :twitch.tv/membership");
+            foreach (var channel in _config.Channels)
+            {
+                await _client.JoinChannelAsync(channel);
+            }
         }
 
         public async Task SendPublicChatMessageAsync(string Message, string Channel)
         {
-            await _client.SendPublicChatMessageAsync(User: _botUser.IrcUserName, Message: Message, Channel: Channel);
+            await _client.SendPublicChatMessageAsync(User: _config.BotUser.IrcUserName, Message: Message, Channel: Channel);
         }
 
                 // public async void ClearMessage(TwitchChatter chatter)

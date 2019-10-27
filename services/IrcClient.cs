@@ -115,6 +115,11 @@ namespace TwitchBot.Services
 
         public async Task JoinChannelAsync(string Channel)
         {
+            if(Channel.StartsWith("#"))
+            {
+                Channel = Channel.Substring(1);
+            }
+            _logger.LogInformation($"Joining channel '{Channel}'");
             await SendIrcMessageAsync($"JOIN #{Channel}");
         }
 
