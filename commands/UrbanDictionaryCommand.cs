@@ -85,7 +85,8 @@ namespace TwitchBot.Commands
                     {
                         var definition = JsonSerializer.Deserialize<UrbanDictionaryResponse>(result, options);
                         if(!string.IsNullOrWhiteSpace(definition.List[0].definition)){
-                            message = $"{command.Parameters[0]} - {definition.List[0].definition}";
+                            message = Regex.Replace(definition.List[0].definition, @"\r\n?|\n|\r", " ");
+                            message = $"{command.Parameters[0]} - {message}";
                             _logger.LogInformation($"Parsed Fact: '{message}'");
                         }
                     }
