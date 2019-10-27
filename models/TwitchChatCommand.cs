@@ -52,7 +52,7 @@ namespace TwitchBot.Models
             string param = string.Empty;
             foreach (var c in message.Substring(spaceIndex))
             {
-                if (c == '"')
+                if (c == '"' || c == '“' || c == '”')
                 {
                     inQuotes = !inQuotes;
                     continue;
