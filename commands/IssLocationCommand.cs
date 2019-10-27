@@ -16,12 +16,12 @@ namespace TwitchBot.Commands
     {
         private ILogger<IssLocationCommand> _logger;
         private ITwitchCommandSubject _subject;
-        private IrcClient _ircClient;
+        private ITwitchIrcClientAdapter _ircClient;
         private HttpClient _httpClient;
         private Task runner;
 
-        public const string PrimaryCommand = "!iislocation";
-        private Regex CommandRex = new Regex("[!]iss|[!]{0,1}issloc|[!]{0,1}isslocation|whereisiss|isswhere", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        public const string PrimaryCommand = "!isslocation";
+        private Regex CommandRex = new Regex("!iss|[!]{0,1}issloc|[!]{0,1}isslocation|whereisiss|isswhere", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static Uri CatfactUri = new Uri("http://api.open-notify.org/iss-now.json");
 
         private JsonSerializerOptions options = new JsonSerializerOptions
@@ -33,7 +33,7 @@ namespace TwitchBot.Commands
         public IssLocationCommand(
             ILogger<IssLocationCommand> logger, 
             ITwitchCommandSubject subject, 
-            IrcClient ircClient,
+            ITwitchIrcClientAdapter ircClient,
             HttpClient httpClient)
         {
             _logger = logger;
@@ -92,7 +92,7 @@ namespace TwitchBot.Commands
                     {
                         message = $"@{command.Message.TwitchUser.DisplayName} {message}";
                     }
-                    task = _ircClient.SendPublicChatMessageAsync(message);
+                    task = _ircClient.SendPublicChatMessageAsync(Message: message, Channel: command.Message.IrcChannel);
                 }
             });
         }

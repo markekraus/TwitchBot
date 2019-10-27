@@ -16,7 +16,7 @@ namespace TwitchBot.Commands
     {
         private ILogger<ExchangeRateCommand> _logger;
         private ITwitchCommandSubject _subject;
-        private IrcClient _ircClient;
+        private ITwitchIrcClientAdapter _ircClient;
         private HttpClient _httpClient;
         private Task runner;
 
@@ -33,7 +33,7 @@ namespace TwitchBot.Commands
         public ExchangeRateCommand(
             ILogger<ExchangeRateCommand> logger, 
             ITwitchCommandSubject subject, 
-            IrcClient ircClient,
+            ITwitchIrcClientAdapter ircClient,
             HttpClient httpClient)
         {
             _logger = logger;
@@ -59,11 +59,13 @@ namespace TwitchBot.Commands
                 string errorMessage;
                 string result;
                 double amount;
+                string usage;
                 foreach (var command in queue.GetConsumingEnumerable())
                 {
                     if (!command.HasParameters || (command.HasParameters && command.Parameters.Count != 2))
                     {
-                        task = _ircClient.SendPublicChatMessageAsync($"@{command.Message.TwitchUser.DisplayName} usage: '{PrimaryCommand} <source currency code> <destination currency code>' example: '{PrimaryCommand} USD INR'");
+                        usage = $"@{command.Message.TwitchUser.DisplayName} usage: '{PrimaryCommand} <source currency code> <destination currency code>' example: '{PrimaryCommand} USD INR'";
+                        task = _ircClient.SendPublicChatMessageAsync(Message: usage, Channel: command.Message.IrcChannel);
                         continue;
                     }
                     result = string.Empty;
@@ -100,7 +102,7 @@ namespace TwitchBot.Commands
                     {
                         message = $"@{command.Message.TwitchUser.DisplayName} {message}";
                     }
-                    task = _ircClient.SendPublicChatMessageAsync(message);
+                    task = _ircClient.SendPublicChatMessageAsync(Message: message, Channel: command.Message.IrcChannel);
                 }
             });
         }

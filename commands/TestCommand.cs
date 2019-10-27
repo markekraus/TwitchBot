@@ -12,13 +12,13 @@ namespace TwitchBot.Commands
     {
         private ILogger<TestCommand> _logger;
         private ITwitchCommandSubject _subject;
-        private IrcClient _client;
+        private ITwitchIrcClientAdapter _client;
         private Task runner;
 
         public const string PrimaryCommand = "!test";
 
         private BlockingCollection<TwitchChatCommand> queue = new BlockingCollection<TwitchChatCommand>(new ConcurrentQueue<TwitchChatCommand>());
-        public TestCommand(ILogger<TestCommand> logger, ITwitchCommandSubject subject, IrcClient client)
+        public TestCommand(ILogger<TestCommand> logger, ITwitchCommandSubject subject, ITwitchIrcClientAdapter client)
         {
             _logger = logger;
             _subject = subject;
@@ -38,17 +38,19 @@ namespace TwitchBot.Commands
             return Task.Run(()=>
             {
                 Task task;
+                string message;
                 foreach (var command in queue.GetConsumingEnumerable())
                 {
                     _logger.LogInformation($"Processing {command.Command}...");
                     if (command.HasParameters && command.Parameters[0] == "123")
                     {
-                        task = _client.SendPublicChatMessageAsync($"Valid !test Received from @{command.Message.TwitchUser.DisplayName}");
+                        message = $"Valid !test Received from @{command.Message.TwitchUser.DisplayName}";
                     }
                     else
                     {
-                        task = _client.SendPublicChatMessageAsync($"Invalid !test Received from @{command.Message.TwitchUser.DisplayName}");
+                        message = $"Invalid !test Received from @{command.Message.TwitchUser.DisplayName}";
                     }
+                    task = _client.SendPublicChatMessageAsync(Message: message, Channel: command.Message.IrcChannel);
                 }
             });
         }

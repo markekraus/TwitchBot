@@ -13,7 +13,7 @@ namespace TwitchBot.Commands
     {
         private ILogger<BrbCommand> _logger;
         private ITwitchCommandSubject _subject;
-        private IrcClient _client;
+        private ITwitchIrcClientAdapter _client;
         private Task runner;
 
         public const string PrimaryCommand = "!brb";
@@ -21,7 +21,10 @@ namespace TwitchBot.Commands
         private Regex CommandRegex = new Regex("[!]{0,1}brb", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         private BlockingCollection<TwitchChatCommand> queue = new BlockingCollection<TwitchChatCommand>(new ConcurrentQueue<TwitchChatCommand>());
-        public BrbCommand(ILogger<BrbCommand> logger, ITwitchCommandSubject subject, IrcClient client)
+        public BrbCommand(
+            ILogger<BrbCommand> logger, 
+            ITwitchCommandSubject subject, 
+            ITwitchIrcClientAdapter client)
         {
             _logger = logger;
             _subject = subject;
@@ -41,10 +44,12 @@ namespace TwitchBot.Commands
             return Task.Run(()=>
             {
                 Task task;
+                string message;
                 foreach (var command in queue.GetConsumingEnumerable())
                 {
                     _logger.LogInformation($"Processing {command.Command}...");
-                    task = _client.SendPublicChatMessageAsync($"We'll see you soon enough, @{command.Message.TwitchUser.DisplayName}!");
+                    message = $"We'll see you soon enough, @{command.Message.TwitchUser.DisplayName}!";
+                    task = _client.SendPublicChatMessageAsync(Message: message, Channel: command.Message.IrcChannel);
                 }
             });
         }

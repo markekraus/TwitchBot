@@ -19,13 +19,13 @@ namespace TwitchBot.Services
 
         private IList<ITwitchCommandObserver> _observers = new List<ITwitchCommandObserver>();
         private Regex CommandRegex = new Regex("!command[s]{0,1}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        private IrcClient _client;
+        private ITwitchIrcClientAdapter _client;
 
         private Task runner;
         public TwitchCommandParser(
             ILogger<TwitchCommandParser> logger,
             ITwitchMessageSubject subject,
-            IrcClient client){
+            ITwitchIrcClientAdapter client){
             _logger = logger;
             _subject = subject;
             _client = client;
@@ -77,7 +77,7 @@ namespace TwitchBot.Services
                             }
                         }
                         builder.Append(string.Join(" ", commandList.OrderBy(q => q).ToArray()));
-                        task = _client.SendPublicChatMessageAsync(builder.ToString());
+                        task = _client.SendPublicChatMessageAsync(builder.ToString(), command.Message.IrcChannel);
                     }
                 }
             });
