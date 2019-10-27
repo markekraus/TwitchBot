@@ -34,6 +34,7 @@ namespace TwitchBot
             UrbanDictionaryCommand urbanDictionaryCommand,
             BrbCommand brbCommand,
             HiMarkCommand hiMarkCommand,
+            SoundsCommand SoundsCommand,
             TestCommand testCommand)
 
         {
@@ -50,6 +51,7 @@ namespace TwitchBot
             commandObservers.Add(brbCommand);
             commandObservers.Add(urbanDictionaryCommand);
             commandObservers.Add(hiMarkCommand);
+            commandObservers.Add(SoundsCommand);
         }
         public async Task Run(){
             _logger.LogInformation($"Console Application Start {DateTime.UtcNow}");
