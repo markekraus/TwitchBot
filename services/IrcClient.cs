@@ -113,6 +113,11 @@ namespace TwitchBot.Services
             _outputStream.Flush();
         }
 
+        public async Task JoinChannelAsync(string Channel)
+        {
+            await SendIrcMessageAsync($"JOIN #{Channel}");
+        }
+
         private void Reconnect()
         {
             if (_retryCount < _config.MaxRetryAttempts)
