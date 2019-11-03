@@ -136,6 +136,10 @@ namespace TwitchBot.Services
                 _retryCount++;
                 _logger.LogInformation($"Attempting to reconnect. Attempt {_retryCount} of {_config.MaxRetryAttempts}.");
                 Connect();
+                foreach (var observer in _observers)
+                {
+                    observer.Reconnect();
+                }
             }
             else
             {

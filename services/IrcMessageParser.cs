@@ -106,5 +106,10 @@ namespace TwitchBot.Services
         {
             _ircObservers.Remove(IrcMessageObserver);
         }
+
+        public Task Reconnect()
+        {
+            return Task.Run(() => {});
+        }
     }
 }

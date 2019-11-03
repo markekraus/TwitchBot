@@ -5,5 +5,6 @@ namespace TwitchBot.Interfaces
     public interface IIrcClientObserver
     {
         Task Update(string Message);
+        Task Reconnect();
     }
 }

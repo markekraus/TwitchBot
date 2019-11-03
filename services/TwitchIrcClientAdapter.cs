@@ -9,7 +9,7 @@ using TwitchBot.Options;
 namespace TwitchBot.Services
 {
 
-    public class TwitchIrcClientAdapter : ITwitchIrcClientAdapter
+    public class TwitchIrcClientAdapter : ITwitchIrcClientAdapter, IIrcClientObserver
     {
         private IIrcClient _client;
         private ILogger<TwitchIrcClientAdapter> _logger;
@@ -23,6 +23,8 @@ namespace TwitchBot.Services
             _client = Client;
             _logger = Logger;
             _config = Config.Value;
+
+            _client.Attach(this);
 
             var init = Init();
         }
@@ -46,7 +48,17 @@ namespace TwitchBot.Services
             await _client.SendPublicChatMessageAsync(User: _config.BotUser.IrcUserName, Message: Message, Channel: Channel);
         }
 
-                // public async void ClearMessage(TwitchChatter chatter)
+        public Task Update(string Message)
+        {
+            return Task.Run(() => {});
+        }
+
+        public async Task Reconnect()
+        {
+            await Init();
+        }
+
+        // public async void ClearMessage(TwitchChatter chatter)
         // {
         //     try
         //     {
