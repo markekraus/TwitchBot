@@ -53,7 +53,10 @@ namespace TwitchBot
                 logging
                     .ClearProviders()
                     .SetMinimumLevel(LogLevel.Information)
-                    .AddConsole();
+                    .AddConsole( c =>
+                    {
+                        c.TimestampFormat = "[HH:mm:ss] ";
+                    });
             });
             services.AddSingleton<HttpClient>();
             services.AddSingleton<IrcClient>();
@@ -80,6 +83,12 @@ namespace TwitchBot
             services.AddSingleton<UrbanDictionaryCommand>();
             services.AddSingleton<BrbCommand>();
             services.AddSingleton<HiMarkCommand>();
+            services.Configure<SoundsCommandSettings>(_option =>
+            {
+                _option.Sounds = configuration.GetSection("Sounds").Get<List<Sound>>();
+                _option.SoundsChannel = configuration.GetValue<string>("BotOwner");
+            });
+            services.AddSingleton<SoundsCommand>();
             services.AddSingleton<PingHandler>();
             services.AddTransient<ConsoleApplication>();
             return services;
