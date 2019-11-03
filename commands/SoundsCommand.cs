@@ -129,7 +129,7 @@ namespace TwitchBot.Commands
             return builder.ToString();
         }
 
-        public string GetPrimaryCommand()
+        public string GetPrimaryCommand(TwitchChatCommand Command)
         {
             return PrimaryCommand;
         }

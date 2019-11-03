@@ -58,7 +58,7 @@ namespace TwitchBot.Commands
             });
         }
 
-        public string GetPrimaryCommand()
+        public string GetPrimaryCommand(TwitchChatCommand Command)
         {
             return PrimaryCommand;
         }

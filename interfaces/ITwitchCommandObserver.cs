@@ -6,7 +6,7 @@ namespace TwitchBot.Interfaces
     public interface ITwitchCommandObserver
     {
         Task Update(TwitchChatCommand Command);
-        string GetPrimaryCommand();
+        string GetPrimaryCommand(TwitchChatCommand Command);
 
         bool IsCommandSupported(string Command);
     }

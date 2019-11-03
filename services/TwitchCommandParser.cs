@@ -70,7 +70,7 @@ namespace TwitchBot.Services
                         commandList = new List<string>();
                         foreach (var observer in _observers)
                         {
-                            commandName = observer.GetPrimaryCommand();
+                            commandName = observer.GetPrimaryCommand(command);
                             if (!string.IsNullOrWhiteSpace(commandName))
                             {
                                 commandList.Add(commandName);
