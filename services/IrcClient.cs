@@ -10,6 +10,7 @@ using System.Net.Security;
 using System.Threading;
 using System.Collections.Concurrent;
 using TwitchBot.Interfaces;
+using System.Collections.Generic;
 
 namespace TwitchBot.Services
 {
@@ -26,12 +27,12 @@ namespace TwitchBot.Services
         private StreamWriter _outputStream;
 
         private BlockingCollection<string> inputQueue = new BlockingCollection<string>(new ConcurrentQueue<string>());
-        private BlockingCollection<string> outputQueue = new BlockingCollection<string>(new ConcurrentQueue<string>());
 
         private Task _inputTask;
         private Task _outputTask;
 
         private int _retryCount = 0;
+        private List<IIrcClientObserver> _observers = new List<IIrcClientObserver>();
 
         public IrcClient(
             IOptions<IrcSettings> config,
@@ -72,6 +73,7 @@ namespace TwitchBot.Services
         {
             return Task.Run(() =>
             {
+                Task task;
                 while (true)
                 {
                     try
@@ -81,7 +83,10 @@ namespace TwitchBot.Services
                         if (!string.IsNullOrWhiteSpace(line))
                         {
                             _logger.LogInformation($"irc receive: {line}");
-                            outputQueue.TryAdd(line);
+                            foreach (var observer in _observers)
+                            {
+                                task = observer.Update(line);
+                            }
                         }
                     }
                     catch (Exception ex)
@@ -173,27 +178,9 @@ namespace TwitchBot.Services
             }
         }
 
-        public async Task<string> ReadMessageAsync()
+        public void Attach(IIrcClientObserver IrcClientObserver)
         {
-            var token = new CancellationTokenSource().Token;
-            return await ReadMessageAsync(token);
-        }
-        public async Task<string> ReadMessageAsync(CancellationToken Token)
-        {
-            return await Task.Run<string>(() =>
-            {
-                string line = string.Empty;
-                try
-                {
-                    line = outputQueue.Take(Token);
-                    _logger.LogInformation($"message dequeued: {line}");
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error reading message");
-                }
-                return line;
-            });
+            _observers.Add(IrcClientObserver);
         }
     }
 }

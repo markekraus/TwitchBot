@@ -8,18 +8,19 @@ using TwitchBot.Models;
 
 namespace TwitchBot.Services
 {
-    public class IrcMessageParser : ITwitchMessageSubject, IIrcMessageSubject
+    public class IrcMessageParser : ITwitchMessageSubject, IIrcMessageSubject, IIrcClientObserver
     {
         private readonly ILogger _logger;
-        private IrcClient _client;
+        private IIrcClient _client;
 
         private IList<ITwitchMessageObserver> _messageObservers = new List<ITwitchMessageObserver>();
         private IList<IIrcMessageObserver> _ircObservers = new List<IIrcMessageObserver>();
 
-        public IrcMessageParser(ILogger<IrcMessageParser> logger, IrcClient client)
+        public IrcMessageParser(ILogger<IrcMessageParser> logger, IIrcClient client)
         {
             _logger = logger;
             _client = client;
+            _client.Attach(this);
         }
 
         public void Attach(ITwitchMessageObserver TwitchMessageObserver)
@@ -56,34 +57,30 @@ namespace TwitchBot.Services
             });
         }
 
-        public async Task Run()
+        public async Task Update(string Message)
         {
-            _logger.LogInformation($"{nameof(IrcMessageParser.Run)}() start {DateTime.UtcNow}");
-            string rawMessage;
-            IrcMessage ircMessage;
-            TwitchMessage twitchMessage;
-            Task notifyTask;
-            var cts = new CancellationTokenSource();
-            do
+            await Task.Run(() =>
             {
-                rawMessage = null;
-                ircMessage = null;
-                twitchMessage = null;
-                rawMessage = await _client.ReadMessageAsync(cts.Token);
-                _logger.LogInformation($"Parser: {rawMessage}");
+                if (String.IsNullOrWhiteSpace(Message))
+                {
+                    return;
+                }
+                IrcMessage ircMessage;
+                _logger.LogInformation($"Parser: {Message}");
                 try
                 {
-                    ircMessage = new IrcMessage(rawMessage);
+                    ircMessage = new IrcMessage(Message);
                     _logger.LogInformation($"Parsed IRC Message {ircMessage}");
                 }
                 catch (System.Exception ex)
                 {
-                    _logger.LogError(ex, "Unable to parse IRC message", rawMessage);
-                    continue;
+                    _logger.LogError(ex, "Unable to parse IRC message", Message);
+                    return;
                 }
-                notifyTask = NotifyIrcObservers(ircMessage);
+                var notifyTask = NotifyIrcObservers(ircMessage);
                 if (ircMessage.Action == TwitchMessage.AllowedAction)
                 {
+                    TwitchMessage twitchMessage;
                     try
                     {
                         twitchMessage = new TwitchMessage(ircMessage);
@@ -92,10 +89,11 @@ namespace TwitchBot.Services
                     }
                     catch (System.Exception ex)
                     {
-                        _logger.LogError(ex, "Unable to parse Twitch message", twitchMessage);
+                        _logger.LogError(ex, "Unable to parse Twitch message", ircMessage);
                     }
                 }
-            } while (!string.IsNullOrEmpty(rawMessage));
+            });
+            
         }
 
         public void Attach(IIrcMessageObserver IrcMessageObserver)

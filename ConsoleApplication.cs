@@ -54,10 +54,14 @@ namespace TwitchBot
             commandObservers.Add(SoundsCommand);
         }
         public async Task Run(){
-            _logger.LogInformation($"Console Application Start {DateTime.UtcNow}");
-            await _ircParser.Run();
-            _logger.LogInformation($"Console Application End {DateTime.UtcNow}");
-            Thread.Sleep(500);
+            await Task.Run(() =>
+            {
+                _logger.LogInformation($"Console Application Start {DateTime.UtcNow}");
+                while(true)
+                {
+                    //noop
+                }
+            });
         }
     }
 }

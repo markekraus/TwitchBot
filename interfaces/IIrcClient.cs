@@ -5,8 +5,7 @@ namespace TwitchBot.Interfaces
 {
     public interface IIrcClient
     {
-        Task<string> ReadMessageAsync();
-        Task<string> ReadMessageAsync(CancellationToken Token);
+        void Attach(IIrcClientObserver IrcClientObserver);
         Task SendIrcMessageAsync(string Message);
         Task JoinChannelAsync(string Message);
         Task SendPublicChatMessageAsync(string User, string Message, string Channel);
