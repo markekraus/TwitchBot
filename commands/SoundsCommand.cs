@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using TwitchBot.Interfaces;
@@ -9,7 +8,8 @@ using System.Text.RegularExpressions;
 using Microsoft.Extensions.Options;
 using TwitchBot.Options;
 using System.Text;
-using NetCoreAudio.Interfaces;
+using LibVLCSharp.Shared;
+using System.Threading;
 
 namespace TwitchBot.Commands
 {
@@ -20,7 +20,8 @@ namespace TwitchBot.Commands
         private ITwitchIrcClientAdapter _ircClient;
         private Task _runner;
         private SoundsCommandSettings _config;
-        private IPlayer _player;
+        private LibVLC _libVLC;
+        private MediaPlayer _player;
 
         public const string PrimaryCommand = "!sounds";
         private Regex _commandRex = new Regex("!sound", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -30,14 +31,16 @@ namespace TwitchBot.Commands
             ILogger<SoundsCommand> logger, 
             ITwitchCommandSubject subject, 
             ITwitchIrcClientAdapter ircClient,
-            IOptions<SoundsCommandSettings> config,
-            IPlayer player)
+            IOptions<SoundsCommandSettings> config)
         {
             _logger = logger;
             _subject = subject;
             _ircClient = ircClient;
             _config = config.Value;
-            _player = player;
+
+            Core.Initialize();
+            _libVLC = new LibVLC();
+            _player = new MediaPlayer(_libVLC);
 
             subject.Attach(this);
             _runner = Run();
@@ -53,8 +56,15 @@ namespace TwitchBot.Commands
             return Task.Run(()=>
             {
                 Regex regex;
+                string channel;
                 foreach (var command in queue.GetConsumingEnumerable())
                 {
+                    channel = command.Message.ChannelOwner.UserName.ToLower();
+                    if(channel != _config.SoundsChannel.ToLower())
+                    {
+                        _logger.LogInformation($"Command not sent from correct chan. SoundsChan: '{_config.SoundsChannel}', SourceChan: {channel}");
+                        continue;
+                    }
                     if (_commandRex.IsMatch(command.Command))
                     {
                         _ircClient.SendPublicChatMessageAsync(Message: GetDefaultCommandMessage(), Channel: command.Message.IrcChannel);
@@ -97,8 +107,13 @@ namespace TwitchBot.Commands
         private void Play(string filePath)
         {
             _logger.LogInformation($"playing file {filePath}");
-            _player.Play(filePath);
-            while(_player.Playing){}
+            var uri = new Uri(filePath);
+            using (var media = new Media(_libVLC, uri.AbsoluteUri, FromType.FromLocation))
+            {
+                _player.Play(media);
+                Thread.Sleep(100);
+                while(_player.State == VLCState.Playing){  }
+            } 
         }
 
         private string GetDefaultCommandMessage()

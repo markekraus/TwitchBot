@@ -21,7 +21,7 @@ namespace TwitchBot.Commands
         private Task runner;
 
         public const string PrimaryCommand = "!urbandictionary";
-        private Regex CommandRex = new Regex("!urban|!urbandict|!urbandictionary!define", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private Regex CommandRex = new Regex("!urdic|!urban|!urbandict|!urbandictionary!define", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         private static string ApiUri = "https://api.urbandictionary.com/v0/define?term={0}";
 
         private JsonSerializerOptions options = new JsonSerializerOptions
