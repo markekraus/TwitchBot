@@ -131,7 +131,11 @@ namespace TwitchBot.Commands
 
         public string GetPrimaryCommand(TwitchChatCommand Command)
         {
-            return PrimaryCommand;
+            if(Command.Message.ChannelOwner.UserName.ToLower() == _config.SoundsChannel.ToLower())
+            {
+                return PrimaryCommand;
+            }
+            return String.Empty;
         }
 
         public bool IsCommandSupported(string Command)
