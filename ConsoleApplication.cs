@@ -35,6 +35,7 @@ namespace TwitchBot
             BrbCommand brbCommand,
             HiMarkCommand hiMarkCommand,
             SoundsCommand SoundsCommand,
+            RollCommand RollCommand,
             TestCommand testCommand)
 
         {
@@ -52,6 +53,7 @@ namespace TwitchBot
             commandObservers.Add(urbanDictionaryCommand);
             commandObservers.Add(hiMarkCommand);
             commandObservers.Add(SoundsCommand);
+            commandObservers.Add(RollCommand);
         }
         public async Task Run(){
             await Task.Run(() =>

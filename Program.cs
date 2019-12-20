@@ -83,6 +83,7 @@ namespace TwitchBot
             services.AddSingleton<UrbanDictionaryCommand>();
             services.AddSingleton<BrbCommand>();
             services.AddSingleton<HiMarkCommand>();
+            services.AddSingleton<RollCommand>();
             services.Configure<SoundsCommandSettings>(_option =>
             {
                 _option.Sounds = configuration.GetSection("Sounds").Get<List<Sound>>();
